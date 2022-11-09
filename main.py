@@ -1,5 +1,7 @@
 import openreview
 import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 client = openreview.Client(baseurl='https://api.openreview.net')
 
@@ -15,20 +17,23 @@ for r in reviews:
         scores_dict[r['forum']] = []
     scores_dict[r['forum']].append(int(r['content']['recommendation'].split(':')[0]))
 
-with open('output.csv', 'w') as f:
-    f.write('Title,Average Score,Standard Deviation,Individual Scores,Author-defined Area\n')
+statistics = []
+all_data = []
+for s in tqdm(submissions):
+    if s.forum not in scores_dict:
+        continue
+    title = s.content['title']
+    if 'Please_choose_the_closest_area_that_your_submission_falls_into' in s.content:
+        area = s.content['Please_choose_the_closest_area_that_your_submission_falls_into']
+    else:
+        area = ''
+    scores = scores_dict[s.forum]
+    avg_score = np.mean(scores)
+    std_score = np.std(scores)
+    all_data.append([ title, str(avg_score), str(std_score), ';'.join([str(i) for i in scores]), area])
 
-    statistics = []
-    for s in submissions:
-        if s.forum not in scores_dict:
-            continue
-        title = s.content['title']
-        if 'Please_choose_the_closest_area_that_your_submission_falls_into' in s.content:
-            area = s.content['Please_choose_the_closest_area_that_your_submission_falls_into']
-        else:
-            area = ''
-        scores = scores_dict[s.forum]
-        avg_score = np.mean(scores)
-        std_score = np.std(scores)
-        f.write('\"' + title + '\",' + str(avg_score) + ',' + str(std_score) + ',' + ';'.join([str(i) for i in scores]) + ',\"' + area + '\"\n')
 
+df = pd.DataFrame(all_data, columns=['Title', 'Average Score', 'Standard Deviation', 'Individual Scores', 'Author-defined Area'])
+df = df.sort_values(by=['Average Score'], ascending=False, ignore_index=True)
+df.index = np.arange(1, len(df)+1)
+df.to_csv('output.csv', index='True')
