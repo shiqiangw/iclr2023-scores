@@ -30,9 +30,10 @@ for s in tqdm(submissions):
     scores = scores_dict[s.forum]
     avg_score = np.mean(scores)
     std_score = np.std(scores)
-    all_data.append(['\"' + title + '\"', str(avg_score), str(std_score), ';'.join([str(i) for i in scores]), '\"' + area + '\"'])
+    all_data.append([ title, str(avg_score), str(std_score), ';'.join([str(i) for i in scores]), area])
 
 
-df = pd.DataFrame(all_data, columns = ['Title', 'Average Score', 'Standard Deviation', 'Individual Scores', 'Author-defined Area'])
-df = df.sort_values(by = ['Average Score'], ascending=False, ignore_index=True)
-df.to_csv('output.csv', index = 'True')
+df = pd.DataFrame(all_data, columns=['Title', 'Average Score', 'Standard Deviation', 'Individual Scores', 'Author-defined Area'])
+df = df.sort_values(by=['Average Score'], ascending=False, ignore_index=True)
+df.index = np.arange(1, len(df)+1)
+df.to_csv('output.csv', index='True')
